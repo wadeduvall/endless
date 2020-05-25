@@ -1,52 +1,62 @@
-version: '3'
+version: '3.1'
 services:
-    postgis:
-        image: "postgis/postgis:12-3.0-alpine"
-        env_file:
-            - database.env
-        volumes:
-            - pgdata:/var/lib/postgresql/data
-            - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-        restart: always
+  postgis:
+    image: "postgis/postgis:12-3.0-alpine"
+    env_file:
+      - database.env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: always
 
-    renderer:
-        build: https://github.com/wad209/renderer.git
-        env_file:
-            - database.env
-            - client.env
-        volumes:
-            - mod_tile:/var/lib/mod_tile
-        depends_on:
-            - postgis
-        restart: always
+  renderer:
+    build: https://github.com/wad209/renderer.git
+    env_file:
+      - database.env
+      - client.env
+    volumes:
+      - mod_tile:/var/lib/mod_tile
+    depends_on:
+      - postgis
+    restart: always
 
-    router:
-        build: https://github.com/wad209/osrm-backend.git
-        volumes:
-            - routedata:/data
-        env_file:
-            - router.env
+  router:
+    build: https://github.com/wad209/osrm-backend.git
+    volumes:
+      - routedata:/data
+    env_file:
+      - router.env
 
-    nginx:
-        image: nginx
-        volumes:
-          - ./leaflet-demo.html:/usr/share/nginx/html/index.html:ro 
-          - ./tile_server.conf:/etc/nginx/conf.d/default.conf:ro
-        depends_on:
-          - renderer
-          - router
-        ports:
-          - "80:80"
+  client:                             
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    volumes:
+      - ./client/public:/app/public:ro
+      - ./client/src:/app/src:ro
 
-    import:
-        build: https://github.com/wad209/osm2pgsql.git
-        env_file:
-            - database.env
-        volumes:
-            - mod_tile:/var/lib/mod_tile
-        depends_on:
-            - postgis
+  nginx:
+    image: nginx:1.18-alpine
+    restart: always
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d/:ro
+    depends_on:
+      - client
+      - renderer
+      - router
+    ports:
+      - "80:80"
+
+  import:
+    build: https://github.com/wad209/osm2pgsql.git
+    env_file:
+      - database.env
+    volumes:
+      - mod_tile:/var/lib/mod_tile
+    depends_on:
+      - postgis
+
 volumes:
-    routedata: {}
-    pgdata: {}
-    mod_tile: {}
+  routedata: {}
+  pgdata: {}
+  mod_tile: {}
