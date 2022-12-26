@@ -1,7 +1,7 @@
 version: '3.1'
 services:
   postgis:
-    image: "postgis/postgis:12-3.0-alpine"
+    image: "postgis/postgis:15-3.3"
     env_file:
       - database.env
     volumes:
@@ -10,20 +10,24 @@ services:
     restart: always
 
   renderer:
-    build: https://github.com/wad209/renderer.git
+    build:
+      context: https://github.com/wad209/renderer.git#master
     env_file:
       - database.env
       - client.env
     volumes:
       - mod_tile:/var/lib/mod_tile
+      - data:/data
     depends_on:
       - postgis
     restart: always
 
   router:
-    build: https://github.com/wad209/osrm-backend.git
+    build:
+      context: https://github.com/wad209/osrm-backend.git#master
     volumes:
-      - routedata:/data
+      - data:/data
+      - ./data.osm.pbf:/data/data.osm.pbf
     env_file:
       - router.env
 
@@ -48,15 +52,17 @@ services:
       - "80:80"
 
   import:
-    build: https://github.com/wad209/osm2pgsql.git
+    build:
+      context: https://github.com/wad209/osm2pgsql.git#master
     env_file:
       - database.env
     volumes:
       - mod_tile:/var/lib/mod_tile
+      - data:/data
     depends_on:
       - postgis
 
 volumes:
-  routedata: {}
   pgdata: {}
   mod_tile: {}
+  data: {}

@@ -23,7 +23,7 @@ import {
 function makeMap(props) {
   const layer = new LayerTile({
     source: new XYZSource({
-      url: 'http://192.168.1.75/tile/{z}/{x}/{y}.png'
+      url: '/tile/{z}/{x}/{y}.png'
     })
   });
 
@@ -63,7 +63,7 @@ function makeMap(props) {
       const request = clickCoords.map(pos => {
         return pos[0].toString() + ',' + pos[1];
       }).join(';');
-      fetch('//192.168.1.75/route/v1/walking/' + request + '?geometries=polyline6').then(
+      fetch('/route/v1/walking/' + request + '?geometries=polyline6').then(
         r => {
           return r.json();
         }).then(json => {
